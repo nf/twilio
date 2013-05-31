@@ -23,12 +23,17 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 type Context interface {
 	// Value returns the request form value for the specified key,
 	// or an empty string if the key is not present in the request.
 	Value(key string) string
+
+	// IntValue is like Value but returns the value as an int.
+	// It returns 0 if the key does not exist or the value cannot be parsed.
+	IntValue(key string) int
 
 	// Response sends a TwiML response to the Twilio service.
 	Response(s string)
@@ -61,6 +66,11 @@ type context struct {
 
 func (c *context) Value(key string) string {
 	return c.r.FormValue(key)
+}
+
+func (c *context) IntValue(key string) int {
+	i, _ := strconv.Atoi(c.r.FormValue(key))
+	return i
 }
 
 func (c *context) Response(s string) {
