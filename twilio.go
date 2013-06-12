@@ -14,9 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package twilio is a library for interacting with the Twilio VoIP and SMS service.
+// Package twilio is a library for interacting with the Twilio VoIP and SMS
+// service.
 //
-// It provides helpers for writing succinct applications that serve TwiML responses.
+// It provides helpers for writing succinct applications that serve TwiML
+// responses.
 package twilio
 
 import (
@@ -35,7 +37,8 @@ type Context interface {
 	// It returns 0 if the key does not exist or the value cannot be parsed.
 	IntValue(key string) int
 
-	// Response sends a TwiML response to the Twilio service.
+	// Response appends the provided string to the TwiML response.
+	// It may be called multiple times from within a handler function.
 	Response(s string)
 
 	// Responsef is like Response but takes a format string and arguments.
@@ -49,8 +52,16 @@ type Context interface {
 // HandlerFunc is a twilio handler function. It implements http.Handler.
 type HandlerFunc func(Context)
 
+const (
+	start = `<?xml version="1.0" encoding="UTF-8"?><Response>`
+	end   = `</Response>`
+)
+
 func (fn HandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fn(&context{w, r})
+	b := bytes.NewBufferString(start)
+	fn(&context{b, r})
+	b.WriteString(end)
+	b.WriteTo(w)
 }
 
 // Handle is a convenience function that registers the specified handler
@@ -60,7 +71,7 @@ func Handle(path string, fn HandlerFunc) {
 }
 
 type context struct {
-	w http.ResponseWriter
+	b *bytes.Buffer
 	r *http.Request
 }
 
@@ -74,10 +85,7 @@ func (c *context) IntValue(key string) int {
 }
 
 func (c *context) Response(s string) {
-	buf := bytes.NewBufferString(`<?xml version="1.0" encoding="UTF-8"?><Response>`)
-	buf.WriteString(s)
-	buf.WriteString(`</Response>`)
-	buf.WriteTo(c.w)
+	c.b.WriteString(s)
 }
 
 func (c *context) Responsef(format string, args ...interface{}) {
