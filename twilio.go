@@ -47,6 +47,9 @@ type Context interface {
 
 	// Hangup is a convenience method that sends a <Hangup/> response.
 	Hangup()
+
+	// Request returns the current HTTP request.
+	Request() *http.Request
 }
 
 // HandlerFunc is a twilio handler function. It implements http.Handler.
@@ -94,4 +97,8 @@ func (c *context) Responsef(format string, args ...interface{}) {
 
 func (c *context) Hangup() {
 	c.Response("<Hangup/>")
+}
+
+func (c* context) Request() *http.Request {
+	return c.r
 }
